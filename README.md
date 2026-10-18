@@ -2,7 +2,7 @@
 
 A client-side Single Page Application (SPA) designed for **GitHub Pages** that allows you to upload multiple files and nested folders (such as `.github/workflows/`) and push them **directly to a target branch** (e.g., `main`) in a single commit using the GitHub Git Database API.
 
-## Project Structure
+## Project Structure 
 
 ```text
 github-direct-pusher/

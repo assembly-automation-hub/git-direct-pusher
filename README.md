@@ -45,7 +45,7 @@
 
 ## Features
 
-**Push Engine**
+### Push Engine
 
 - **Atomic, single-commit pushes** — every staged file lands in exactly one commit on the target branch.
 - **Git Data API pipeline** — blobs → tree → commit → ref, orchestrated fully client-side (no `git` binary, no SSH keys, no local working tree).
@@ -54,7 +54,7 @@
 - **Opt-in force ref update** — a `force: true` ref patch for non-fast-forward situations, gated behind an explicit checkbox.
 - **Workflow-file delivery** — push `.github/workflows/*.yml` and other dot-directories that typical web uploaders refuse to touch (requires the `workflow` token scope).
 
-**File Staging**
+### File Staging
 
 - **Drag & drop of files and entire nested folders**, with full relative directory structure preserved (`webkitGetAsEntry` recursive traversal).
 - **Folder picker** (`webkitdirectory`) and **multi-file picker** for browsers/users who prefer native dialogs.
@@ -63,7 +63,7 @@
 - **Staging manager** — sorted file list with per-file byte size, individual `Remove` actions, and `Clear All`.
 - **Large-folder resilience** — works around Chrome's 100-entry `FileSystemDirectoryReader` batch limit with a drain loop.
 
-**UX & Productivity**
+### UX & Productivity
 
 - **Real-time execution log** with timestamps, per-file upload progress (`[3/7] Uploading blob: ...`), and clickable commit/branch deep links on completion.
 - **Repository auto-detection** — the *Check Repo* button validates `owner/repo` (or a full GitHub URL) and auto-fills the default branch.
@@ -71,7 +71,7 @@
 - **Persistent workspace** — token, repository, and target branch survive page reloads via `localStorage`.
 - **Responsive, dark-themed UI** built with Tailwind CSS, including custom scrollbars and drop-zone state indicators.
 
-**Security & Deployment**
+### Security & Deployment
 
 - **Zero attack surface on the server side** — there is no server. The token exists only in your browser storage and outbound calls to `api.github.com`.
 - **Deploy anywhere static** — GitHub Pages, Netlify, Vercel, nginx, or `python3 -m http.server`.
@@ -253,7 +253,7 @@ No dependency installation, no compilation: `index.html` is the complete shippab
 | "Branch not found" and an unexpected base commit | Target branch genuinely missing | Intended: the tool branches off the repo default and tells you in the log (`Using default branch ... as base`) |
 | Tailwind styles missing | `cdn.tailwindcss.com` unreachable (offline / blocking extension) | Restore network access or allow-list the CDN |
 
-**Alternative install methods**
+#### Alternative install methods
 
 - **Zero-install hosted instance** — open the published app: <https://assembly-automation-hub.github.io/git-direct-pusher/>.
 - **Download ZIP** — *Code → Download ZIP* on GitHub, extract, then serve the folder with any static server (no `git` required).
@@ -265,7 +265,7 @@ No dependency installation, no compilation: `index.html` is the complete shippab
 
 ## Testing
 
-This project ships **zero runtime dependencies**, so there is no bundled unit/integration test framework (there is nothing to `npm install`). Verification is a layered workflow of **static checks**, a **local smoke test**, and a **manual regression matrix** against a scratch repository.
+This project ships **zero runtime dependencies**, so there is no bundled unit/integration test framework (there is nothing to `npm install`). Verification is a layered workflow of **static checks**, a **documentation lint**, a **local smoke test**, and a **manual regression matrix** against a scratch repository.
 
 **1. Module syntax checks (fast, no network):**
 
@@ -287,7 +287,15 @@ npx --yes prettier --check "js/**/*.js" "css/**/*.css" "index.html"
 npx --yes prettier --write "js/**/*.js" "css/**/*.css" "index.html"
 ```
 
-**4. Local integration smoke test:**
+**4. Documentation lint (Markdown):**
+
+```bash
+npx --yes markdownlint-cli2 README.md
+```
+
+Rules are tuned in [`.markdownlint.json`](.markdownlint.json): line-length (`MD013`) is disabled so tables and badge rows render naturally, and inline HTML (`MD033`) is allow-listed to the `<details>` / `<summary>` / `<strong>` elements this documentation intentionally uses.
+
+**5. Local integration smoke test:**
 
 ```bash
 python3 -m http.server 8080 &      # boot the static server in the background
@@ -296,7 +304,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/js/app.js # expec
 curl -s http://localhost:8080/ | grep -o '<title>[^<]*</title>'          # expect: <title>GitHub Direct Pusher</title>
 ```
 
-**5. End-to-end regression matrix** — run against a throwaway repository with a scoped PAT:
+**6. End-to-end regression matrix** — run against a throwaway repository with a scoped PAT:
 
 <details>
 <summary><strong>Expand: manual QA / regression checklist</strong></summary>
@@ -333,17 +341,21 @@ Drop this minimal `package.json` into the repo root if you prefer `npm test` / `
   "type": "module",
   "scripts": {
     "serve": "python3 -m http.server 8080",
-    "lint:html": "html-validate index.html",
     "lint:js": "node --check js/api.js && node --check js/app.js && node --check js/fileHandler.js",
-    "lint": "npm run lint:js && npm run lint:html",
+    "lint:html": "html-validate index.html",
+    "lint:md": "markdownlint-cli2 README.md",
+    "lint": "npm run lint:js && npm run lint:html && npm run lint:md",
     "test": "npm run lint"
   },
   "devDependencies": {
-    "html-validate": "^9.0.0",
+    "html-validate": "^11.0.0",
+    "markdownlint-cli2": "^0.23.0",
     "prettier": "^3.0.0"
   }
 }
 ```
+
+With that in place you get the conventional entry points: `npm test` (runs every static check), `npm run lint`, `npm run lint:js`, `npm run lint:html`, `npm run lint:md`, and `npm run serve`.
 
 For a stricter JS lint pass, add ESLint 9 with a flat config:
 
@@ -557,20 +569,7 @@ console.log(result.commitUrl); // → https://github.com/owner/repo/commit/<sha>
 ```
 
 <details>
-<summary><strong>Advanced Usage — custom progress reporters, force pushes, and staging APIs</strong></summary>
-
-**Custom progress reporter (formatters).** `onProgress` receives pre-escaped HTML snippets; wrap it to feed a different sink (toast stack, `console`, telemetry buffer):
-
-```js
-const result = await pushFilesDirectly({
-  /* ... */
-  onProgress: (msg) => {
-    // Strip the HTML the pipeline emits and route plain text to your own logger
-    const plain = msg.replace(/<[^>]+>/g, '');
-    myTelemetrySink.push({ ts: Date.now(), line: plain });
-  }
-});
-```
+<summary><strong>Advanced Usage — force pushes, dynamic staging, branch bootstrapping, and embedding</strong></summary>
 
 **Force push (non-fast-forward ref moves).** When the local base has diverged from what the remote expects, a plain ref update fails with `422`. The UI exposes this as a checkbox; in code:
 
@@ -599,6 +598,58 @@ filesMap.set(file.name, { base64: await fileToBase64(file), size: file.size });
 **Bootstrapping a brand-new branch.** Nothing to configure — pass `branch: 'feature/x'`; on `404` the pipeline resolves the repository default branch, uses its tip as `baseSha`, and creates `refs/heads/feature/x` at the new commit.
 
 **Embedding in your own UI.** `js/api.js` and `js/fileHandler.js` have zero DOM dependencies and can be dropped into any ES-module page; only `js/app.js` is UI-bound.
+
+</details>
+
+<details>
+<summary><strong>Custom Formatters — progress reporting &amp; log output</strong></summary>
+
+The push pipeline reports progress as pre-escaped HTML snippets (paths are wrapped in `<span class="text-blue-300">`) through the `onProgress` callback. The built-in UI logger (`log(message, isError)` in `js/app.js`) prepends a localized timestamp and applies red, bold styling to error lines. Because the sink is a plain callback, you can re-format the stream for any destination — a toast stack, `console`, a telemetry buffer, or a file.
+
+**Plain-text formatter** (strip the emitted markup before logging):
+
+```js
+const result = await pushFilesDirectly({
+  /* ... */
+  onProgress: (msg) => {
+    // Strip the HTML the pipeline emits and route plain text to your own logger
+    const plain = msg.replace(/<[^>]+>/g, '');
+    console.log(`[push] ${plain}`);
+  }
+});
+```
+
+**Structured JSON-lines formatter** (machine-parseable audit trail):
+
+```js
+const formatLine = (msg, level = 'info') =>
+  JSON.stringify({
+    ts: new Date().toISOString(),   // ISO-8601 timestamp
+    level,                          // 'info' | 'error'
+    event: 'push-progress',
+    msg: msg.replace(/<[^>]+>/g, '') // same markup-stripping as above
+  });
+
+try {
+  await pushFilesDirectly({
+    /* ... */
+    onProgress: (msg) => myTelemetrySink.write(formatLine(msg) + '\n')
+  });
+} catch (err) {
+  // Failures throw — format them with the same schema for a uniform log
+  myTelemetrySink.write(formatLine(err.message, 'error') + '\n');
+}
+```
+
+**Severity mapping with HTML preserved** (when the sink renders markup, e.g. a styled panel like the built-in log box):
+
+```js
+onProgress: (msg) => {
+  const line = document.createElement('div');
+  line.innerHTML = `<span class="text-slate-500">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+  myLogPanel.appendChild(line); // keeps the blue path highlighting intact
+}
+```
 
 </details>
 

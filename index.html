@@ -22,7 +22,7 @@
     <section class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-800 p-5 rounded-lg border border-slate-700 shadow-sm">
       <div>
         <label for="token" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">GitHub Token (repo + workflow)</label>
-        <input id="token" type="password" placeholder="ghp_... or github_pat_..." 
+        <input id="token" type="password" autocomplete="current-password" placeholder="ghp_... or github_pat_..." 
           class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
       </div>
       <div>
@@ -57,7 +57,7 @@
 
     <!-- Drag & Drop Zone -->
     <section id="dropzone" class="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition cursor-pointer bg-slate-800/40">
-      <p class="text-slate-200 font-medium">Drag & drop files or entire folders here (e.g. <code class="text-blue-400">.github</code>)</p>
+      <p class="text-slate-200 font-medium">Drag &amp; drop files or entire folders here (e.g. <code class="text-blue-400">.github</code>)</p>
       <p class="text-xs text-slate-400 mt-1">Relative directory paths are automatically preserved</p>
       <div class="mt-4 flex flex-wrap justify-center gap-3">
         <button type="button" id="selectFilesBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-4 py-2 rounded transition">
@@ -110,7 +110,7 @@
 
     <!-- Submit Button -->
     <button id="submitBtn" type="button" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-lg transition shadow-lg">
-      Commit & Push Directly to Branch
+      Commit &amp; Push Directly to Branch
     </button>
 
     <!-- Activity Log -->

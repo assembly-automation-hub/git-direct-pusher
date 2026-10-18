@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Direct Pusher</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6 font-sans">
+  <div class="max-w-3xl mx-auto space-y-6">
+    <!-- Header -->
+    <header class="border-b border-slate-700 pb-4 flex justify-between items-start">
+      <div>
+        <h1 class="text-2xl font-bold text-white tracking-tight">GitHub Direct Pusher</h1>
+        <p class="text-sm text-slate-400 mt-1">Push multiple files and nested folders (including <code class="text-blue-400">.github</code>) directly to your target branch via Git Data API.</p>
+      </div>
+      <span class="bg-blue-900/40 text-blue-300 border border-blue-700/50 text-xs font-mono px-2.5 py-1 rounded">Client-Side SPA</span>
+    </header>
+
+    <!-- Configuration Panel -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-800 p-5 rounded-lg border border-slate-700 shadow-sm">
+      <div>
+        <label for="token" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">GitHub Token (repo + workflow)</label>
+        <input id="token" type="password" placeholder="ghp_... or github_pat_..." 
+          class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+      </div>
+      <div>
+        <label for="repo" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Repository or URL</label>
+        <div class="flex gap-2">
+          <input id="repo" type="text" placeholder="Owner/Repo or full GitHub URL" 
+            class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+          <button id="detectBranchBtn" type="button" title="Auto-detect default branch from GitHub"
+            class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-3 py-2 rounded font-medium whitespace-nowrap transition">
+            Check Repo
+          </button>
+        </div>
+      </div>
+      <div>
+        <label for="targetBranch" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Target Branch</label>
+        <input id="targetBranch" type="text" value="main" placeholder="main"
+          class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+      </div>
+      <div>
+        <label for="commitMessage" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Commit Message</label>
+        <input id="commitMessage" type="text" value="Direct push via GitHub Web Pusher" 
+          class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition">
+      </div>
+      <div class="md:col-span-2 flex items-center justify-between pt-2 border-t border-slate-700/60">
+        <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300 select-none">
+          <input id="forcePush" type="checkbox" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+          <span>Force update branch reference (<code class="text-slate-400">force: true</code>) if not fast-forward</span>
+        </label>
+        <span id="repoStatus" class="text-xs font-mono text-slate-400"></span>
+      </div>
+    </section>
+
+    <!-- Drag & Drop Zone -->
+    <section id="dropzone" class="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:border-blue-500 transition cursor-pointer bg-slate-800/40">
+      <p class="text-slate-200 font-medium">Drag & drop files or entire folders here (e.g. <code class="text-blue-400">.github</code>)</p>
+      <p class="text-xs text-slate-400 mt-1">Relative directory paths are automatically preserved</p>
+      <div class="mt-4 flex flex-wrap justify-center gap-3">
+        <button type="button" id="selectFilesBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-4 py-2 rounded transition">
+          Select Files
+        </button>
+        <button type="button" id="selectFolderBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium px-4 py-2 rounded transition">
+          Select Folder
+        </button>
+      </div>
+      <input id="fileInput" type="file" multiple class="hidden">
+      <input id="folderInput" type="file" webkitdirectory directory multiple class="hidden">
+    </section>
+
+    <!-- Manual Text File Creator -->
+    <details class="bg-slate-800 rounded-lg border border-slate-700">
+      <summary class="px-4 py-3 text-sm font-medium cursor-pointer text-slate-300 hover:text-white select-none">
+        + Create or Paste File Manually (e.g. .github/workflows/deploy.yml)
+      </summary>
+      <div class="p-4 border-t border-slate-700 space-y-3">
+        <div>
+          <label for="manualPath" class="block text-xs text-slate-400 mb-1">File Path (relative to repo root)</label>
+          <input id="manualPath" type="text" placeholder=".github/workflows/main.yml" 
+            class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-sm font-mono focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label for="manualContent" class="block text-xs text-slate-400 mb-1">File Content</label>
+          <textarea id="manualContent" rows="6" placeholder="name: CI&#10;on: [push]..." 
+            class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-blue-500"></textarea>
+        </div>
+        <button type="button" id="addManualBtn" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2 rounded font-medium transition">
+          Stage File
+        </button>
+      </div>
+    </details>
+
+    <!-- Staged Files List -->
+    <section class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Staged Files (<span id="fileCount">0</span>)
+        </h2>
+        <button id="clearFilesBtn" type="button" class="text-xs text-red-400 hover:text-red-300 hover:underline transition">
+          Clear All
+        </button>
+      </div>
+      <ul id="fileList" class="space-y-1.5 text-sm font-mono max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+        <li class="text-slate-500 text-xs italic">No files staged yet...</li>
+      </ul>
+    </section>
+
+    <!-- Submit Button -->
+    <button id="submitBtn" type="button" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-4 rounded-lg transition shadow-lg">
+      Commit & Push Directly to Branch
+    </button>
+
+    <!-- Activity Log -->
+    <section id="logContainer" class="hidden space-y-2">
+      <div class="flex justify-between items-center">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Execution Log</span>
+        <button id="clearLogBtn" type="button" class="text-xs text-slate-400 hover:text-slate-200">Clear Log</button>
+      </div>
+      <div id="logBox" class="bg-black/70 border border-slate-800 rounded-lg p-4 font-mono text-xs text-slate-300 space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar"></div>
+    </section>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
